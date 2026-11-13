@@ -1,0 +1,9 @@
+[project]
+name = "hermes-alexa-bridge"
+version = "0.0.1"
+description = "Sidecar that talks to Amazon Alexa for the hermes-alexa plugin"
+requires-python = ">=3.13"
+license = "MIT"
+dependencies = [
+    "aioamazondevices==17.2.11",
+]
