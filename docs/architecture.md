@@ -1,6 +1,6 @@
 # Architecture
 
-> Status: Phase 1 done (bridge + tools). Phase 2 (the platform adapter) is next.
+> Status: Phase 2 implemented (platform adapter + skill); Phase 1 done (bridge + tools).
 
 ## Goal
 
@@ -28,11 +28,45 @@ Hermes tools / cron / hooks ─────────────┤
    `standalone_sender_fn` so `deliver=alexa` cron jobs work.
 2. **Bridge (sidecar process):** owns the Amazon session and calls Alexa.
 
+## Inbound: from "Alexa, ask Hermes" to a spoken answer
+
+```
+Echo ─▶ Alexa cloud ─▶ HTTPS tunnel /alexa ─▶ adapter (127.0.0.1:8796)
+                                                │ 1. verify (alexa_verify.py)
+                                                │ 2. handle_message(event)  ──▶ agent
+                                                │ 3. wait ≤ ALEXA_REPLY_SECONDS for send()
+                                                ▼
+                          reply in time: Alexa says it in the same exchange
+                          too slow:      "I'll let you know"; the reply is announced
+                                         on the same Echo through the bridge
+```
+
+- **Verification** (Amazon's rules for skills hosted as a web service): the certificate URL
+  must be `https://s3.amazonaws.com[:443]/echo.api/…`; the chain must be valid now, issued
+  for `echo-api.amazon.com` and chain to a trusted root (certifi); `Signature-256` must be
+  the RSA/SHA-256 signature of the raw body; the timestamp within 150 s; the
+  `applicationId` must be `ALEXA_SKILL_ID`. Nothing is parsed or handed on before that.
+- **Timing:** Alexa gives a skill about 8 s. The adapter waits `ALEXA_REPLY_SECONDS`
+  (5.5 s) for the agent, then a short settle for a trailing chunk. Gateway status messages
+  (busy acks, `_interim_send`) are never announced; one is spoken only when nothing else
+  came back in time.
+- **Identity:** `chat_id` = `echo-<hash of the skill's deviceId>` (one conversation per
+  Echo), `user_id` = `amzn-<hash of the Alexa userId>`. Unknown users go through the
+  gateway's pairing (the code is spoken) or `ALEXA_ALLOWED_USERS`.
+- **Which Echo is `echo-…`?** The skill's `deviceId` is opaque and no Amazon API maps it to a
+  serial. A few seconds after the first request from an Echo, the bridge looks at Alexa's
+  voice history (`sync_history_state`, latest record per device) and remembers the Echo that
+  just spoke (`skill-devices.json`). With a single Echo there is nothing to look up.
+- **Display tier `minimal`:** no tool progress or interim messages are read out loud.
+- **Conversation mode:** "Alexa, open Hermes" keeps the session open (reprompt "anything
+  else?") until the user stops; a one-shot "Alexa, ask Hermes …" ends after the answer.
+
 ## Decision: why a sidecar
 
 `aioamazondevices` (the library behind Home Assistant's official *Alexa Devices*
 integration) requires **Python >= 3.13** since 17.2.4 (2026-11-02). Hermes supports
-`>=3.11`, and real installs run 3.11. The library also pins `aiohttp>=3.14.5` and ships a
+`>=3.11`: the Windows desktop's gateway runs a bundled 3.14, but source installs commonly
+run 3.11. The library also pins `aiohttp>=3.14.5` and ships a
 new release almost weekly (230 releases so far) because Amazon changes its private API.
 
 Running it in its own process (own venv, managed with `uv`) means:
