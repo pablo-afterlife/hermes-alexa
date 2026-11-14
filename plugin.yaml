@@ -1,14 +1,15 @@
 name: hermes-alexa
 label: Alexa
-kind: standalone
-version: 0.1.0
+kind: platform
+version: 0.2.0
 author: Pablo Vinicius
 homepage: https://github.com/pablo-afterlife/hermes-alexa
 description: >
-  Alexa for Hermes Agent, without replacing Alexa: make your Echo speak or announce,
-  give Alexa commands (lights, timers, music, routines) and set its volume, from any
-  Hermes channel. A small local bridge (Python 3.13, installed by
-  `hermes alexa setup`) keeps your Amazon session.
+  Alexa for Hermes Agent, without replacing Alexa. Talk to Hermes from your Echo
+  ("Alexa, ask Hermes...") through your own Alexa skill, with the answer on the same
+  Echo; and from any Hermes channel make your Echo speak or announce, give Alexa
+  commands (lights, timers, music, routines) and set its volume. A small local bridge
+  (Python 3.13, installed by `hermes alexa setup`) keeps your Amazon session.
 requires_hermes: ">=0.21.6"
 provides_tools:
   - alexa_speak
@@ -18,7 +19,28 @@ provides_tools:
   - alexa_routines
 provides_hooks: []
 optional_env:
+  - name: ALEXA_SKILL_ID
+    description: "Your Alexa skill's id (amzn1.ask.skill...): turns on talking to Hermes from the Echo; only requests for this skill are accepted"
+    prompt: "Alexa skill id"
+    url: "https://developer.amazon.com/alexa/console/ask"
+    password: false
   - name: HERMES_ALEXA_BRIDGE_PORT
     description: "Loopback port of the Alexa bridge (default 8795)"
     prompt: "Alexa bridge port"
+    password: false
+  - name: ALEXA_PORT
+    description: "Loopback port of the skill endpoint (default 8796); expose it over HTTPS (e.g. Tailscale Funnel)"
+    prompt: "Skill endpoint port"
+    password: false
+  - name: ALEXA_ALLOWED_USERS
+    description: "Comma-separated Hermes ids of the Alexa users allowed in (amzn-...); unknown users get a pairing code"
+    prompt: "Allowed Alexa users"
+    password: false
+  - name: ALEXA_HOME_CHANNEL
+    description: "Echo name for cron deliver=alexa (default: your only Echo)"
+    prompt: "Echo for scheduled messages"
+    password: false
+  - name: ALEXA_REPLY_SECONDS
+    description: "How long Alexa waits for Hermes before saying it will announce the answer (default 5.5)"
+    prompt: "Seconds to wait for a spoken reply"
     password: false

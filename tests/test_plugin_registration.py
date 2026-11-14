@@ -1,5 +1,5 @@
-"""register(ctx) wiring: five tools in the ``alexa`` toolset and the ``hermes alexa`` command,
-all through the public plugin API."""
+"""register(ctx) wiring: five tools in the ``alexa`` toolset, the ``hermes alexa`` command and
+the ``alexa`` gateway platform, all through the public plugin API."""
 
 from __future__ import annotations
 
@@ -9,20 +9,23 @@ from pathlib import Path
 import pytest
 
 import alexa_plugin
-from alexa_plugin import alexa_bridge, alexa_tools
+from alexa_plugin import alexa_bridge, alexa_platform, alexa_tools
 
 TOOL_NAMES = ["alexa_speak", "alexa_command", "alexa_devices", "alexa_volume", "alexa_routines"]
 
 
 class RecordingCtx:
     def __init__(self):
-        self.tools, self.cli = [], []
+        self.tools, self.cli, self.platforms = [], [], []
 
     def register_tool(self, **kwargs):
         self.tools.append(kwargs)
 
     def register_cli_command(self, **kwargs):
         self.cli.append(kwargs)
+
+    def register_platform(self, **kwargs):
+        self.platforms.append(kwargs)
 
 
 @pytest.fixture
@@ -64,3 +67,44 @@ def test_tools_are_unavailable_until_installed_and_logged_in(data_dir):
     assert alexa_tools.check_available() is False  # installed, but no Amazon session yet
     (data_dir / "login-data.json").write_text("{}", encoding="utf-8")
     assert alexa_tools.check_available() is True
+
+
+def test_registers_alexa_as_a_voice_platform(ctx):
+    (entry,) = ctx.platforms
+    assert (entry["name"], entry["label"]) == ("alexa", "Alexa")
+    assert entry["display_tier"] == "minimal"  # no tool progress read out loud
+    assert entry["allowed_users_env"] == "ALEXA_ALLOWED_USERS"
+    assert entry["cron_deliver_env_var"] == "ALEXA_HOME_CHANNEL"
+    assert "alexa_speak" in entry["platform_hint"]  # the agent must not answer twice
+
+
+def test_platform_is_off_until_a_skill_id_is_set(monkeypatch):
+    from gateway.config import PlatformConfig
+
+    monkeypatch.delenv("ALEXA_SKILL_ID", raising=False)
+    assert alexa_platform.check_requirements() is False
+    assert alexa_platform.env_enablement() is None
+    assert alexa_platform.validate_config(PlatformConfig(enabled=True, extra={})) is False
+    monkeypatch.setenv("ALEXA_SKILL_ID", "amzn1.ask.skill.x")
+    assert alexa_platform.check_requirements() is True
+    seed = alexa_platform.env_enablement()
+    assert seed["skill_id"] == "amzn1.ask.skill.x"
+    assert seed["home_channel"]["chat_id"] == "default"  # cron deliver=alexa: the only Echo
+
+
+def test_settings_come_from_env_over_config(monkeypatch):
+    from gateway.config import PlatformConfig
+
+    monkeypatch.setenv("ALEXA_PORT", "9000")
+    s = alexa_platform.Settings.load(PlatformConfig(enabled=True, extra={
+        "skill_id": "a, b", "port": 8000, "reply_seconds": "x", "path": "voz/"}))
+    assert (s.skill_ids, s.port, s.reply_seconds, s.path) == (("a", "b"), 9000, 5.5, "/voz")
+
+
+def test_cron_delivery_without_the_gateway_announces(monkeypatch):
+    import asyncio
+
+    sent = []
+    monkeypatch.setattr(alexa_bridge, "announce", lambda chat_id, text: sent.append((chat_id, text)))
+    result = asyncio.run(alexa_platform.standalone_send(None, "Sala", "# Bom dia\n- **sol**"))
+    assert result["success"] and sent == [("Sala", "Bom dia. sol.")]
