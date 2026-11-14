@@ -1,0 +1,237 @@
+{
+  "interactionModel": {
+    "languageModel": {
+      "invocationName": "hermes",
+      "intents": [
+        {
+          "name": "PedidoIntent",
+          "slots": [
+            {
+              "name": "pedido",
+              "type": "PEDIDO"
+            }
+          ],
+          "samples": [
+            "{pedido}",
+            "pergunta {pedido}",
+            "pede {pedido}",
+            "pede pra {pedido}",
+            "pra {pedido}",
+            "me diz {pedido}",
+            "me fala {pedido}",
+            "por favor {pedido}",
+            "quero saber {pedido}",
+            "eu quero {pedido}",
+            "preciso {pedido}"
+          ]
+        },
+        {
+          "name": "AMAZON.CancelIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.HelpIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.StopIntent",
+          "samples": [
+            "tchau",
+            "chega",
+            "pode parar"
+          ]
+        },
+        {
+          "name": "AMAZON.NavigateHomeIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.FallbackIntent",
+          "samples": []
+        }
+      ],
+      "types": [
+        {
+          "name": "PEDIDO",
+          "values": [
+            {
+              "name": {
+                "value": "que horas são"
+              }
+            },
+            {
+              "name": {
+                "value": "como está o tempo amanhã"
+              }
+            },
+            {
+              "name": {
+                "value": "resume meus e-mails"
+              }
+            },
+            {
+              "name": {
+                "value": "o que tem na minha agenda hoje"
+              }
+            },
+            {
+              "name": {
+                "value": "me lembra de ligar pro médico às três"
+              }
+            },
+            {
+              "name": {
+                "value": "pesquisa o preço do dólar"
+              }
+            },
+            {
+              "name": {
+                "value": "qual a capital da austrália"
+              }
+            },
+            {
+              "name": {
+                "value": "escreve uma mensagem pro joão dizendo que vou atrasar"
+              }
+            },
+            {
+              "name": {
+                "value": "liga o ar da sala"
+              }
+            },
+            {
+              "name": {
+                "value": "toca uma música calma"
+              }
+            },
+            {
+              "name": {
+                "value": "traduz bom dia para o inglês"
+              }
+            },
+            {
+              "name": {
+                "value": "quanto é vinte por cento de trezentos"
+              }
+            },
+            {
+              "name": {
+                "value": "verifica se o servidor caiu"
+              }
+            },
+            {
+              "name": {
+                "value": "lê a última mensagem do telegram"
+              }
+            },
+            {
+              "name": {
+                "value": "anota que preciso comprar leite"
+              }
+            },
+            {
+              "name": {
+                "value": "cria uma tarefa para amanhã"
+              }
+            },
+            {
+              "name": {
+                "value": "qual é a próxima reunião"
+              }
+            },
+            {
+              "name": {
+                "value": "me conta uma curiosidade"
+              }
+            },
+            {
+              "name": {
+                "value": "abre um chamado"
+              }
+            },
+            {
+              "name": {
+                "value": "status do deploy"
+              }
+            },
+            {
+              "name": {
+                "value": "procura um restaurante perto de casa"
+              }
+            },
+            {
+              "name": {
+                "value": "explica o que é uma api"
+              }
+            },
+            {
+              "name": {
+                "value": "manda um resumo do dia pro meu telegram"
+              }
+            },
+            {
+              "name": {
+                "value": "quantos dias faltam para o natal"
+              }
+            },
+            {
+              "name": {
+                "value": "agenda uma reunião com a rejane na sexta às dez"
+              }
+            },
+            {
+              "name": {
+                "value": "o que você fez hoje"
+              }
+            },
+            {
+              "name": {
+                "value": "continua a tarefa de ontem"
+              }
+            },
+            {
+              "name": {
+                "value": "cancela o lembrete das cinco"
+              }
+            },
+            {
+              "name": {
+                "value": "sim"
+              }
+            },
+            {
+              "name": {
+                "value": "não"
+              }
+            },
+            {
+              "name": {
+                "value": "obrigado"
+              }
+            },
+            {
+              "name": {
+                "value": "pode mandar"
+              }
+            },
+            {
+              "name": {
+                "value": "faz um resumo das notícias de tecnologia"
+              }
+            },
+            {
+              "name": {
+                "value": "qual foi o resultado do jogo do bahia"
+              }
+            },
+            {
+              "name": {
+                "value": "verifica minha caixa de entrada e me diz se tem algo urgente"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
