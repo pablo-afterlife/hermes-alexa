@@ -1,0 +1,45 @@
+{
+  "manifest": {
+    "manifestVersion": "1.0",
+    "publishingInformation": {
+      "locales": {
+        "pt-BR": {
+          "name": "Hermes",
+          "summary": "Converse com o seu Hermes Agent pela Alexa.",
+          "description": "Skill pessoal: leva o que você pede para o seu Hermes Agent e fala a resposta no mesmo Echo. Se demorar, o Echo avisa quando ficar pronto.",
+          "examplePhrases": [
+            "Alexa, abre o hermes",
+            "Alexa, pede pro hermes resumir meus e-mails",
+            "Alexa, pergunta pro hermes o que tem na minha agenda"
+          ],
+          "keywords": [
+            "hermes",
+            "agente",
+            "assistente"
+          ]
+        }
+      },
+      "isAvailableWorldwide": false,
+      "distributionCountries": [
+        "BR"
+      ],
+      "testingInstructions": "Skill pessoal em desenvolvimento, para uso do dono.",
+      "category": "ORGANIZERS_AND_ASSISTANTS"
+    },
+    "apis": {
+      "custom": {
+        "endpoint": {
+          "uri": "{{ENDPOINT}}",
+          "sslCertificateType": "Trusted"
+        }
+      }
+    },
+    "privacyAndCompliance": {
+      "allowsPurchases": false,
+      "usesPersonalInfo": false,
+      "isChildDirected": false,
+      "isExportCompliant": true,
+      "containsAds": false
+    }
+  }
+}
