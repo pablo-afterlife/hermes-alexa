@@ -112,3 +112,38 @@ async def test_refreshed_tokens_are_saved_back(tmp_path):
     await acc.speak("Olá")
     saved = json.loads((tmp_path / "login-data.json").read_text(encoding="utf-8"))
     assert saved == {"email": "me@example.com", "login_data": {"site": "x", "access_token": "new"}}
+
+
+class HistoryApi(FakeApi):
+    """Alexa's voice history: latest record per serial, timestamps in epoch ms."""
+
+    def __init__(self, heard):
+        super().__init__()
+        self.heard, self.history_calls = heard, 0
+
+    async def sync_history_state(self):
+        self.history_calls += 1
+        return {serial: SimpleNamespace(timestamp=ts) for serial, ts in self.heard.items()}
+
+
+async def test_single_echo_is_the_skill_device_without_asking_amazon(tmp_path):
+    api = HistoryApi({})
+    target = await account_with(api, tmp_path).resolve_skill_device("echo-abc")
+    assert (target.name, api.history_calls) == ("Echo Dot de Pablo", 0)
+
+
+async def test_skill_device_is_the_echo_heard_last_and_is_remembered(tmp_path):
+    api = HistoryApi({"G0": 1_000, "G1": 9_000})
+    acc = account_with(api, tmp_path, devices=(SALA, QUARTO))
+    assert (await acc.resolve_skill_device("echo-abc", since_ms=8_000)).serial == "G1"
+    api.heard = {"G0": 20_000}  # someone else talks to the living room Echo later
+    assert (await acc.resolve_skill_device("echo-abc")).serial == "G1"
+    assert api.history_calls == 1
+    assert json.loads((tmp_path / "skill-devices.json").read_text(encoding="utf-8")) == {"echo-abc": "G1"}
+
+
+async def test_skill_device_unknown_when_history_has_nothing_recent(tmp_path):
+    acc = account_with(HistoryApi({"G0": 1_000}), tmp_path, devices=(SALA, QUARTO))
+    with pytest.raises(AlexaError, match="which Echo"):
+        await acc.resolve_skill_device("echo-abc", since_ms=500_000)
+    assert not (tmp_path / "skill-devices.json").exists()

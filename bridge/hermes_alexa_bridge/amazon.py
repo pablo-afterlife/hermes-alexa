@@ -21,6 +21,8 @@ from aioamazondevices.const.metadata import SEQUENCE_BATCH_DELAY
 from aioamazondevices.structures import AmazonDevice, AmazonSaveDataConfig
 
 LOGIN_FILE = "login-data.json"
+DEVICE_MAP_FILE = "skill-devices.json"
+HISTORY_SLACK_MS = 60_000
 _LIB_LOGGER = "aioamazondevices"
 
 
@@ -177,6 +179,51 @@ class AlexaAccount:
     def device(self, wanted: str | None) -> AmazonDevice:
         self._require_api()  # "log in" beats "no devices" when there is no session
         return pick_device(self._devices, wanted)
+
+    # -- which Echo talked to the skill ------------------------------------------------------
+
+    @property
+    def device_map_file(self) -> Path:
+        return self.data_dir / DEVICE_MAP_FILE
+
+    def _device_map(self) -> dict[str, str]:
+        try:
+            return json.loads(self.device_map_file.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return {}
+
+    def _remember(self, key: str, serial: str) -> None:
+        known = self._device_map()
+        if known.get(key) == serial:
+            return
+        known[key] = serial
+        self.data_dir.mkdir(parents=True, exist_ok=True)
+        tmp = self.device_map_file.with_suffix(".tmp")
+        tmp.write_text(json.dumps(known, indent=2), encoding="utf-8")
+        tmp.replace(self.device_map_file)
+
+    async def resolve_skill_device(self, key: str, since_ms: int | None = None) -> Device:
+        """The Echo behind a skill request's device id (``key`` is the plugin's hash of it).
+
+        Skill requests carry an opaque id that no Amazon API maps to a serial. Once known, the
+        pair is remembered. Otherwise: the only Echo, or the one with the latest voice record
+        in Alexa's history (the one that just spoke to the skill), at or after ``since_ms``.
+        """
+        self._require_api()
+        by_serial = {d.serial_number: d for d in self._devices}
+        target = by_serial.get(self._device_map().get(key, ""))
+        if target is None and len(self._devices) == 1:
+            target = self._devices[0]
+        if target is None:
+            history = await self._require_api().sync_history_state()
+            heard = [(rec.timestamp, serial) for serial, rec in history.items()
+                     if serial in by_serial
+                     and (since_ms is None or rec.timestamp >= since_ms - HISTORY_SLACK_MS)]
+            if not heard:
+                raise AlexaError("Could not tell which Echo that was yet.")
+            target = by_serial[max(heard)[1]]
+        self._remember(key, target.serial_number)
+        return Device.from_amazon(target)
 
     # -- actions --------------------------------------------------------------------------
 

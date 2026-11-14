@@ -24,6 +24,10 @@ class FakeAccount:
     async def announce(self, text, device):
         raise NotLoggedIn("Not logged in to Amazon. Run: hermes alexa login")
 
+    async def resolve_skill_device(self, key, since_ms=None):
+        self.calls.append(("resolve", key, since_ms))
+        return SimpleNamespace(name="Echo do Quarto", serial="G1")
+
     async def set_volume(self, level, device):
         self.calls.append(("volume", level, device))
         return SimpleNamespace(name="Echo Dot de Pablo")
@@ -85,3 +89,19 @@ async def test_volume_validates_integer(client):
 def test_token_is_created_once_and_reused(tmp_path):
     first = load_or_create_token(tmp_path)
     assert len(first) >= 40 and load_or_create_token(tmp_path) == first
+
+
+async def test_speak_on_the_echo_the_skill_saw(client):
+    resp = await client.post("/speak", json={"text": "Pronto", "alexa_device": "echo-abc"}, headers=AUTH)
+    assert (await resp.json())["device"] == "G1"
+    assert client.account.calls == [("resolve", "echo-abc", None), ("speak", "Pronto", "G1")]
+
+
+async def test_resolve_skill_device(client):
+    resp = await client.post("/skill-device", json={"alexa_device": "echo-abc", "since_ms": 1700},
+                             headers=AUTH)
+    assert await resp.json() == {"ok": True, "device": "Echo do Quarto", "serial": "G1"}
+    assert client.account.calls == [("resolve", "echo-abc", 1700)]
+    bad = await client.post("/skill-device", json={"alexa_device": "echo-abc", "since_ms": "ontem"},
+                            headers=AUTH)
+    assert bad.status == 400

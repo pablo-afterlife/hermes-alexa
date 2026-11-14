@@ -78,3 +78,22 @@ def test_install_without_uv_explains(data_dir, monkeypatch):
     monkeypatch.setattr(b, "find_uv", lambda: None)
     with pytest.raises(b.BridgeError, match="uv is required"):
         b.install(run=pytest.fail)
+
+
+@pytest.mark.parametrize("chat_id, fields", [
+    ("echo-0123456789ab", {"alexa_device": "echo-0123456789ab"}),
+    ("default", {}),
+    ("", {}),
+    ("Echo do Quarto", {"device": "Echo do Quarto"}),
+])
+def test_echo_target_names_the_echo_behind_a_chat(chat_id, fields):
+    assert b.echo_target(chat_id) == fields
+
+
+def test_announce_and_learn_go_to_the_bridge(fake_bridge):
+    fake_bridge.responses["/skill-device"] = (200, {"ok": True, "device": "Echo do Quarto"})
+    assert b.announce("echo-0123456789ab", "Pronto.") == "Echo"
+    assert b.learn_skill_device("echo-0123456789ab", 1700) == "Echo do Quarto"
+    assert fake_bridge.calls() == [
+        ("POST", "/announce", {"text": "Pronto.", "alexa_device": "echo-0123456789ab"}),
+        ("POST", "/skill-device", {"alexa_device": "echo-0123456789ab", "since_ms": 1700})]
