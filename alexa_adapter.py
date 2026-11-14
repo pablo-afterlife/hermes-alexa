@@ -71,6 +71,9 @@ class _Waiting:
 class AlexaAdapter(BasePlatformAdapter):
     def __init__(self, config: Any, **kwargs: Any) -> None:
         super().__init__(config=config, platform=Platform(PLATFORM))
+        # An Echo saying "gateway online" at every restart is noise, not a notification.
+        if hasattr(config, "gateway_restart_notification"):
+            config.gateway_restart_notification = False
         self.settings = Settings.load(config)
         self.verifier = AlexaRequestVerifier(self.settings.skill_ids)
         self._runner: web.AppRunner | None = None
