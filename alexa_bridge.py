@@ -164,3 +164,39 @@ def run_login(run=subprocess.run) -> int:
     result = run([str(py), "-I", "-m", "hermes_alexa_bridge", "login",
                   "--data-dir", str(data_dir())], env=_clean_env())
     return result.returncode
+
+
+# -- used by the Alexa platform (gateway) ---------------------------------------------------
+
+SKILL_DEVICE_PREFIX = "echo-"
+DEFAULT_TARGETS = {"", "default", "home"}
+
+
+def echo_target(chat_id: str) -> dict[str, str]:
+    """Bridge fields naming the Echo behind a Hermes chat id.
+
+    ``echo-…`` is an Echo seen by the skill; ``default``/empty is the only (or only online)
+    Echo; anything else is an Echo name or serial (e.g. a cron home channel).
+    """
+    chat_id = (chat_id or "").strip()
+    if chat_id.startswith(SKILL_DEVICE_PREFIX):
+        return {"alexa_device": chat_id}
+    if chat_id.lower() in DEFAULT_TARGETS:
+        return {}
+    return {"device": chat_id}
+
+
+def announce(chat_id: str, text: str) -> str:
+    """Blocking: announce ``text`` on the Echo for ``chat_id``; returns the Echo's name."""
+    client = BridgeClient()
+    client.ensure_running()
+    return str(client.request("POST", "/announce", {"text": text, **echo_target(chat_id)})
+               .get("device") or "")
+
+
+def learn_skill_device(chat_id: str, since_ms: int | None) -> str:
+    """Blocking: have the bridge work out (and remember) which Echo ``chat_id`` is."""
+    client = BridgeClient()
+    client.ensure_running()
+    body: dict[str, Any] = {"alexa_device": chat_id, "since_ms": since_ms}
+    return str(client.request("POST", "/skill-device", body, timeout=20).get("device") or "")

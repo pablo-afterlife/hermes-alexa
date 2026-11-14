@@ -91,13 +91,32 @@ async def devices(request: web.Request) -> web.Response:
     return web.json_response({"devices": [asdict(d) for d in refreshed]})
 
 
+async def _device(account: AlexaAccount, data: dict[str, Any]) -> str | None:
+    """``alexa_device`` (an Echo seen by the skill) wins over ``device`` (name or serial)."""
+    key = str(data.get("alexa_device") or "").strip()
+    if key:
+        return (await account.resolve_skill_device(key)).serial
+    return data.get("device")
+
+
 def _action(method: str) -> Handler:
     async def handle(request: web.Request) -> web.Response:
         data = await _body(request)
         account = request.app[ACCOUNT]
-        target = await getattr(account, method)(_text(data), data.get("device"))
+        text = _text(data)
+        target = await getattr(account, method)(text, await _device(account, data))
         return web.json_response({"ok": True, "device": target.name})
     return handle
+
+
+async def resolve_skill_device(request: web.Request) -> web.Response:
+    data = await _body(request)
+    try:
+        since = int(data["since_ms"]) if data.get("since_ms") is not None else None
+    except (TypeError, ValueError) as exc:
+        raise AlexaError("'since_ms' must be an integer (epoch milliseconds).") from exc
+    target = await request.app[ACCOUNT].resolve_skill_device(_text(data, "alexa_device"), since)
+    return web.json_response({"ok": True, "device": target.name, "serial": target.serial})
 
 
 async def volume(request: web.Request) -> web.Response:
@@ -144,6 +163,7 @@ def build_app(account: AlexaAccount, token: str) -> web.Application:
     app.router.add_post("/announce", _action("announce"))
     app.router.add_post("/command", _action("command"))
     app.router.add_post("/volume", volume)
+    app.router.add_post("/skill-device", resolve_skill_device)
     app.router.add_get("/routines", routines)
     app.router.add_post("/routine", run_routine)
     app.router.add_post("/reload", reload_session)
