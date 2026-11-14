@@ -217,3 +217,8 @@ def test_compressed_bodies_are_refused(announced):
     hermes = Hermes(adapter, [("oi", None)])
     [(status, _)] = run(adapter, alexa_request(text="oi"), headers={"Content-Encoding": "gzip"})
     assert status == 400 and hermes.events == []
+
+
+def test_the_echo_is_not_told_every_time_the_gateway_restarts():
+    adapter = make_adapter()
+    assert adapter.config.gateway_restart_notification is False
