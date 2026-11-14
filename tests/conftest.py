@@ -19,6 +19,7 @@ import pytest
 PACKAGE = "alexa_plugin"
 _ROOT = Path(__file__).resolve().parents[1]
 sys.path[:] = [p for p in sys.path if Path(p or ".").resolve() != _ROOT]
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # test helpers (alexa_fakes)
 
 
 def _load_plugin_package():
