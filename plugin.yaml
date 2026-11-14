@@ -1,0 +1,24 @@
+name: hermes-alexa
+label: Alexa
+kind: standalone
+version: 0.1.0
+author: Pablo Vinicius
+homepage: https://github.com/pablo-afterlife/hermes-alexa
+description: >
+  Alexa for Hermes Agent, without replacing Alexa: make your Echo speak or announce,
+  give Alexa commands (lights, timers, music, routines) and set its volume, from any
+  Hermes channel. A small local bridge (Python 3.13, installed by
+  `hermes alexa setup`) keeps your Amazon session.
+requires_hermes: ">=0.21.6"
+provides_tools:
+  - alexa_speak
+  - alexa_command
+  - alexa_devices
+  - alexa_volume
+  - alexa_routines
+provides_hooks: []
+optional_env:
+  - name: HERMES_ALEXA_BRIDGE_PORT
+    description: "Loopback port of the Alexa bridge (default 8795)"
+    prompt: "Alexa bridge port"
+    password: false
