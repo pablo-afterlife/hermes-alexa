@@ -1,6 +1,6 @@
 # Architecture
 
-> Status: Phase 0 (feasibility). Nothing here is final.
+> Status: Phase 1 done (bridge + tools). Phase 2 (the platform adapter) is next.
 
 ## Goal
 
