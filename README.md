@@ -24,9 +24,9 @@ Tested with an Echo Dot (5th gen) on a Brazilian Amazon account (amazon.com.br).
 
 ## Talk to Hermes from the Echo
 
-"Alexa, ask Hermes to summarize my email" goes to your Hermes like a Telegram message.
+"Alexa, ask Hermes Agent to summarize my email" goes to your Hermes like a Telegram message.
 A quick answer is spoken right away; a slow one gets "I'll let you know" and is announced
-on the same Echo when ready. "Alexa, open Hermes" starts a back-and-forth conversation.
+on the same Echo when ready. "Alexa, open Hermes Agent" starts a back-and-forth conversation.
 Each Echo is its own conversation. `deliver=alexa` cron jobs announce on your Echo.
 
 It needs your own Alexa skill (free, stays in development, only on your account) and an
@@ -39,7 +39,7 @@ HTTPS tunnel to your machine. Phase 3 turns this into one command; today:
    `skill/interactionModels/custom/pt-BR.json`, then `ask smapi set-skill-enablement -g development`.
 2. Expose the endpoint: e.g. `tailscale funnel --bg --set-path /alexa http://127.0.0.1:8796/alexa`.
 3. Add `ALEXA_SKILL_ID=amzn1.ask.skill...` to Hermes's `.env` and restart the gateway.
-4. Say "Alexa, open Hermes". The first time, Alexa reads a pairing code: approve it with
+4. Say "Alexa, open Hermes Agent". The first time, Alexa reads a pairing code: approve it with
    `hermes pairing approve alexa <code>` (or set `ALEXA_ALLOWED_USERS`).
 
 Only requests signed by Amazon for your skill id get in (see

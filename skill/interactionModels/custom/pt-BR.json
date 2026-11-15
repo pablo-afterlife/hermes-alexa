@@ -1,7 +1,7 @@
 {
   "interactionModel": {
     "languageModel": {
-      "invocationName": "hermes",
+      "invocationName": "hermes agent",
       "intents": [
         {
           "name": "PedidoIntent",
