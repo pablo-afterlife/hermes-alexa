@@ -22,7 +22,7 @@ STRINGS = {
         "reprompt": "Pode falar.",
         "more": "Mais alguma coisa?",
         "empty": "O que você quer pedir pro Hermes?",
-        "help": ("É só falar o que você quer, por exemplo: pede pro Hermes resumir meus e-mails. "
+        "help": ("É só falar o que você quer, por exemplo: pede pro Hermes Agent resumir meus e-mails. "
                  "Se demorar, eu aviso aqui quando ficar pronto. O que você quer pedir?"),
         "stop": "Até mais.",
         "fallback": "Não entendi. Pode repetir?",
@@ -34,7 +34,7 @@ STRINGS = {
         "reprompt": "Go ahead.",
         "more": "Anything else?",
         "empty": "What do you want to ask Hermes?",
-        "help": ("Just say what you need, for example: ask Hermes to summarize my email. "
+        "help": ("Just say what you need, for example: ask Hermes Agent to summarize my email. "
                  "If it takes a while, I'll let you know here when it's done. What do you want to ask?"),
         "stop": "Goodbye.",
         "fallback": "Sorry, I didn't get that. Can you say it again?",

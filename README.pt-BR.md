@@ -24,9 +24,9 @@ Testado com Echo Dot (5ª geração) e conta brasileira (amazon.com.br).
 
 ## Falar com o Hermes pelo Echo
 
-"Alexa, pede pro Hermes resumir meus e-mails" chega ao seu Hermes como uma mensagem do
+"Alexa, pede pro Hermes Agent resumir meus e-mails" chega ao seu Hermes como uma mensagem do
 Telegram. Resposta rápida sai na hora; se demorar, a Alexa diz "já te aviso" e anuncia no
-mesmo Echo quando ficar pronto. "Alexa, abre o Hermes" começa uma conversa de ida e volta.
+mesmo Echo quando ficar pronto. "Alexa, abre o Hermes Agent" começa uma conversa de ida e volta.
 Cada Echo é uma conversa. Agendamentos com `deliver=alexa` anunciam no seu Echo.
 
 Precisa de uma skill da Alexa sua (grátis, fica em desenvolvimento, só na sua conta) e de um
@@ -39,7 +39,7 @@ túnel HTTPS até a sua máquina. A Fase 3 transforma isso num comando só; por 
    `skill/interactionModels/custom/pt-BR.json` e `ask smapi set-skill-enablement -g development`.
 2. Publique o endpoint: por exemplo `tailscale funnel --bg --set-path /alexa http://127.0.0.1:8796/alexa`.
 3. Ponha `ALEXA_SKILL_ID=amzn1.ask.skill...` no `.env` do Hermes e reinicie o gateway.
-4. Diga "Alexa, abre o Hermes". Na primeira vez a Alexa lê um código de pareamento: aprove
+4. Diga "Alexa, abre o Hermes Agent". Na primeira vez a Alexa lê um código de pareamento: aprove
    com `hermes pairing approve alexa <código>` (ou use `ALEXA_ALLOWED_USERS`).
 
 Só entram pedidos assinados pela Amazon para o id da sua skill (ver a
