@@ -61,6 +61,11 @@ Echo ─▶ Alexa cloud ─▶ HTTPS tunnel /alexa ─▶ adapter (127.0.0.1:879
   request gets only `web`, `session_search`, `todo` and the `alexa` tools: no terminal,
   code, files, browser, computer control or memory writes, and no `/update`. The owner can
   pick other toolsets with `platform_toolsets.alexa` in `config.yaml` (`hermes tools`).
+- **Amazon session health:** every `ALEXA_CHECK_MINUTES` (30) and after a failed
+  announcement, the adapter lists the Echos through the bridge. While that fails, a slow
+  answer gets "I can't let you know here, run `hermes alexa login`" instead of a promise, and
+  with `ALEXA_ALERT_TO` the owner hears it once in that platform's home chat (and once when
+  it is back), through `inject_message` (needs `allow_gateway_injection`).
 - **Display tier `minimal`:** no tool progress or interim messages are read out loud.
 - **Conversation mode:** "Alexa, open Hermes" keeps the session open (reprompt "anything
   else?") until the user stops; a one-shot "Alexa, ask Hermes …" ends after the answer.

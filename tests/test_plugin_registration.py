@@ -120,6 +120,33 @@ def test_settings_come_from_env_over_config(monkeypatch):
     assert (s.skill_ids, s.port, s.reply_seconds, s.path) == (("a", "b"), 9000, 5.5, "/voz")
 
 
+def test_alerts_go_to_the_home_chat_of_the_chosen_platform(monkeypatch):
+    class Ctx:
+        injected = []
+
+        def inject_message(self, content, role="user", *, session_key=None, origin=None):
+            self.injected.append((content, role, origin))
+            return True
+
+    monkeypatch.setitem(alexa_platform._PLUGIN, "ctx", None)
+    assert alexa_platform.alert_owner("telegram", "oi") is False  # gateway not loaded us
+    monkeypatch.setitem(alexa_platform._PLUGIN, "ctx", Ctx())
+    monkeypatch.delenv("TELEGRAM_HOME_CHANNEL", raising=False)
+    assert alexa_platform.alert_owner("telegram", "oi") is False  # no home chat to tell
+    monkeypatch.setenv("TELEGRAM_HOME_CHANNEL", "123")
+    assert alexa_platform.alert_owner("telegram", "oi") is True
+    assert Ctx.injected == [("oi", "system",
+                             {"platform": "telegram", "chat_id": "123", "chat_type": "dm"})]
+
+
+def test_alert_settings(monkeypatch):
+    from gateway.config import PlatformConfig
+
+    monkeypatch.setenv("ALEXA_ALERT_TO", "Telegram")
+    s = alexa_platform.Settings.load(PlatformConfig(enabled=True, extra={"check_minutes": "x"}))
+    assert (s.alert_to, s.check_minutes) == ("telegram", 30.0)
+
+
 def test_cron_delivery_without_the_gateway_announces(monkeypatch):
     import asyncio
 

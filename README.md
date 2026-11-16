@@ -48,6 +48,17 @@ Voice is not a password, so by voice Hermes only searches the web, looks up past
 conversations and uses the Alexa tools: no terminal, code or files unless you choose so in
 `platform_toolsets.alexa`.
 
+If the Amazon session stops working, the Echo stops promising "I'll let you know" and says
+to run `hermes alexa login`. To also hear about it on Telegram, set `ALEXA_ALERT_TO=telegram`
+(it uses `TELEGRAM_HOME_CHANNEL`) and allow the plugin to start a message there:
+
+```yaml
+plugins:
+  entries:
+    hermes-alexa:
+      allow_gateway_injection: true
+```
+
 ## Install
 
 Requires [uv](https://docs.astral.sh/uv/) (bundled with Hermes on Windows) and an Amazon

@@ -27,6 +27,8 @@ STRINGS = {
         "stop": "Até mais.",
         "fallback": "Não entendi. Pode repetir?",
         "deferred": "Tô vendo. Já te aviso por aqui.",
+        "no_announce": ("Tô vendo, mas não vou conseguir te avisar por aqui: a conexão com a "
+                        "Amazon caiu. Roda hermes alexa login no computador."),
         "unavailable": "O Hermes não está disponível agora.",
     },
     "en": {
@@ -39,6 +41,8 @@ STRINGS = {
         "stop": "Goodbye.",
         "fallback": "Sorry, I didn't get that. Can you say it again?",
         "deferred": "On it. I'll let you know here.",
+        "no_announce": ("On it, but I can't let you know here: the Amazon connection is down. "
+                        "Run hermes alexa login on the computer."),
         "unavailable": "Hermes is not available right now.",
     },
 }

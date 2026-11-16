@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import dataclasses
 
 import pytest
 from aiohttp.test_utils import TestClient, TestServer
@@ -181,8 +182,74 @@ def test_announce_failure_is_reported(monkeypatch):
         raise alexa_bridge.BridgeError("The Alexa bridge is not installed. Run: hermes alexa setup")
 
     monkeypatch.setattr(alexa_bridge, "announce", broken)
+    monkeypatch.setattr(alexa_bridge, "check_session", lambda: 1)
     result = asyncio.run(make_adapter().send(ECHO, "Pronto."))
     assert not result.success and "hermes alexa setup" in result.error
+
+
+@pytest.fixture
+def alerts(monkeypatch):
+    sent = []
+    monkeypatch.setattr(alexa_adapter, "alert_owner",
+                        lambda platform, text: sent.append((platform, text)) or True)
+    return sent
+
+
+def make_watched_adapter(monkeypatch, session):
+    """An adapter that alerts on Telegram; ``session`` says whether the Amazon session works."""
+    def check():
+        if not session["ok"]:
+            raise alexa_bridge.BridgeError("Amazon refused the session (401)")
+        return 1
+
+    monkeypatch.setattr(alexa_bridge, "check_session", check)
+    adapter = make_adapter(reply_seconds=0.1)
+    adapter.settings = dataclasses.replace(adapter.settings, alert_to="telegram")
+    return adapter
+
+
+def test_the_owner_hears_once_when_the_amazon_session_drops_and_when_it_is_back(monkeypatch,
+                                                                                alerts):
+    session = {"ok": True}
+    adapter = make_watched_adapter(monkeypatch, session)
+
+    async def checks():
+        await adapter.check_session()  # fine from the start: nothing to say
+        session["ok"] = False
+        await adapter.check_session()
+        await adapter.check_session()  # still down: no second alert
+        session["ok"] = True
+        await adapter.check_session()
+
+    asyncio.run(checks())
+    assert [platform for platform, _ in alerts] == ["telegram", "telegram"]
+    assert "hermes alexa login" in alerts[0][1] and "401" in alerts[0][1]
+    assert "works again" in alerts[1][1]
+
+
+def test_with_the_session_down_alexa_does_not_promise_an_announcement(monkeypatch, alerts,
+                                                                      announced):
+    adapter = make_watched_adapter(monkeypatch, {"ok": False})
+    asyncio.run(adapter.check_session())
+    Hermes(adapter, [("Resumo pronto.", None)], delay=0.3)
+    [(_, answer)] = run(adapter, alexa_request(text="resume meus e-mails"))
+    assert "hermes alexa login" in speech(answer)
+
+
+def test_a_failed_announcement_checks_the_session_and_alerts_the_owner(monkeypatch, alerts):
+    adapter = make_watched_adapter(monkeypatch, {"ok": False})
+
+    def broken(chat_id, text):
+        raise alexa_bridge.BridgeError("Amazon refused the session (401)")
+
+    monkeypatch.setattr(alexa_bridge, "announce", broken)
+
+    async def go():
+        await adapter.send(ECHO, "Pronto.")
+        await asyncio.sleep(0.05)  # the check runs in the background
+
+    asyncio.run(go())
+    assert len(alerts) == 1
 
 
 def test_a_late_reply_to_an_earlier_request_is_announced_not_given_as_this_answer(announced):
