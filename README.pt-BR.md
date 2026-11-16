@@ -47,6 +47,18 @@ Só entram pedidos assinados pela Amazon para o id da sua skill (ver a
 consulta conversas anteriores e usa as ferramentas da Alexa. Terminal, código e arquivos só
 se você escolher em `platform_toolsets.alexa`.
 
+Se a sessão da Amazon parar de funcionar, o Echo deixa de prometer "já te aviso" e diz para
+rodar `hermes alexa login`. Para receber o aviso também no Telegram, use
+`ALEXA_ALERT_TO=telegram` (vai para o `TELEGRAM_HOME_CHANNEL`) e permita que o plugin inicie
+uma mensagem lá:
+
+```yaml
+plugins:
+  entries:
+    hermes-alexa:
+      allow_gateway_injection: true
+```
+
 ## Instalação
 
 Precisa do [uv](https://docs.astral.sh/uv/) (vem com o Hermes no Windows) e de uma conta

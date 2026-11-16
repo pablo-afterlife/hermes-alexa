@@ -22,6 +22,7 @@ DEFAULT_PORT = 8796
 DEFAULT_PATH = "/alexa"
 DEFAULT_REPLY_SECONDS = 5.5  # Alexa gives a skill 8 s; leave room for the tunnel
 HOME_DEFAULT = "default"  # cron deliver=alexa without a home channel: the only Echo
+DEFAULT_CHECK_MINUTES = 30.0  # how often the adapter proves the Amazon session still works
 
 PLATFORM_HINT = (
     "You are talking through an Amazon Echo: Alexa reads your reply out loud. Answer in the "
@@ -65,6 +66,8 @@ class Settings:
     port: int
     path: str
     reply_seconds: float
+    alert_to: str = ""  # platform whose home chat hears "the Amazon session is down"
+    check_minutes: float = DEFAULT_CHECK_MINUTES
 
     @classmethod
     def load(cls, config: Any = None) -> Settings:
@@ -80,7 +83,25 @@ class Settings:
                    port=_number(pick("ALEXA_PORT", "port", DEFAULT_PORT), int, DEFAULT_PORT),
                    path=path,
                    reply_seconds=_number(pick("ALEXA_REPLY_SECONDS", "reply_seconds",
-                                              DEFAULT_REPLY_SECONDS), float, DEFAULT_REPLY_SECONDS))
+                                              DEFAULT_REPLY_SECONDS), float, DEFAULT_REPLY_SECONDS),
+                   alert_to=str(pick("ALEXA_ALERT_TO", "alert_to", "")).strip().lower(),
+                   check_minutes=_number(pick("ALEXA_CHECK_MINUTES", "check_minutes",
+                                              DEFAULT_CHECK_MINUTES), float,
+                                         DEFAULT_CHECK_MINUTES))
+
+
+_PLUGIN: dict[str, Any] = {"ctx": None}  # the plugin context, for alerts on other channels
+
+
+def alert_owner(platform: str, text: str) -> bool:
+    """Tell the owner in ``platform``'s home chat (e.g. Telegram); the agent there relays it.
+    Needs ``plugins.entries.hermes-alexa.allow_gateway_injection: true`` in config.yaml."""
+    ctx = _PLUGIN["ctx"]
+    chat_id = _env(f"{platform.upper()}_HOME_CHANNEL") if platform else ""
+    if ctx is None or not chat_id:
+        return False
+    origin = {"platform": platform, "chat_id": chat_id, "chat_type": "dm"}
+    return bool(ctx.inject_message(text, role="system", origin=origin))
 
 
 def check_requirements() -> bool:
@@ -103,7 +124,8 @@ def env_enablement() -> dict[str, Any] | None:
     return seed_extra_from_env(
         [("ALEXA_SKILL_ID", "skill_id", None), ("ALEXA_HOST", "host", None),
          ("ALEXA_PORT", "port", int), ("ALEXA_PATH", "path", None),
-         ("ALEXA_REPLY_SECONDS", "reply_seconds", float)],
+         ("ALEXA_REPLY_SECONDS", "reply_seconds", float), ("ALEXA_ALERT_TO", "alert_to", None),
+         ("ALEXA_CHECK_MINUTES", "check_minutes", float)],
         home_env="ALEXA_HOME_CHANNEL", home_default=HOME_DEFAULT)
 
 
@@ -138,6 +160,7 @@ def _supported(kwargs: dict[str, Any]) -> dict[str, Any]:
 
 
 def register_platform(ctx: Any) -> None:
+    _PLUGIN["ctx"] = ctx
     ctx.register_platform(
         name=PLATFORM, label="Alexa", adapter_factory=_make_adapter, check_fn=check_requirements,
         validate_config=validate_config, required_env=["ALEXA_SKILL_ID"],

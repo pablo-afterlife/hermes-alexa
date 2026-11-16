@@ -194,6 +194,13 @@ def announce(chat_id: str, text: str) -> str:
                .get("device") or "")
 
 
+def check_session() -> int:
+    """Blocking: prove the Amazon session still works by listing the Echos; their count."""
+    client = BridgeClient()
+    client.ensure_running()
+    return len(client.request("GET", "/devices", timeout=20).get("devices") or [])
+
+
 def learn_skill_device(chat_id: str, since_ms: int | None) -> str:
     """Blocking: have the bridge work out (and remember) which Echo ``chat_id`` is."""
     client = BridgeClient()

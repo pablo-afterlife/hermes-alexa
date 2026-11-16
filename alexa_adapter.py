@@ -30,7 +30,7 @@ from gateway.platforms.event import MessageEvent, MessageType
 
 from . import alexa_bridge as bridge
 from . import alexa_skill as skill
-from .alexa_platform import PLATFORM, Settings, voice_toolsets
+from .alexa_platform import PLATFORM, Settings, alert_owner, voice_toolsets
 from .alexa_verify import AlexaRequestVerifier, RequestRejected
 
 logger = logging.getLogger(__name__)
@@ -38,6 +38,12 @@ logger = logging.getLogger(__name__)
 MAX_BODY_BYTES = 64 * 1024
 SETTLE_S = 0.4  # after the first chunk, catch one that follows right behind
 LEARN_DEVICE_AFTER_S = 4.0  # Alexa's voice history needs a moment to show the request
+FIRST_CHECK_AFTER_S = 60.0  # let the gateway settle before the first session check
+ALERT_DOWN = ("hermes-alexa: the Amazon session behind the Echo stopped working ({error}). "
+              "Slow answers can't be announced on the Echo until it is fixed. Tell the user, in "
+              "their language and in one or two sentences, to run `hermes alexa login`.")
+ALERT_UP = ("hermes-alexa: the Amazon session works again; the Echo can announce answers. "
+            "Tell the user in one short sentence, in their language.")
 # Mid-turn status sends start with one of these (busy acks); the words are localized.
 _STATUS_PREFIXES = ("⚡", "⏳", "⏩", "💾")
 
@@ -81,6 +87,7 @@ class AlexaAdapter(BasePlatformAdapter):
         self._known_devices: set[str] = set()
         self._known_users: set[str] = set()
         self._background: set[asyncio.Task] = set()
+        self._session_ok: bool | None = None  # Amazon session behind announcements; None = unknown
 
     # -- lifecycle ------------------------------------------------------------------------
 
@@ -106,6 +113,8 @@ class AlexaAdapter(BasePlatformAdapter):
             return False
         self._runner = runner
         self._mark_connected()
+        if self.settings.check_minutes > 0:
+            self._spawn(self._watch_session())
         logger.info("Alexa: skill endpoint on %s:%s%s", self.settings.host, self.settings.port,
                     self.settings.path)
         return True
@@ -166,8 +175,53 @@ class AlexaAdapter(BasePlatformAdapter):
             await asyncio.to_thread(bridge.announce, chat_id, text)
         except bridge.BridgeError as exc:
             logger.warning("Alexa: could not announce on %s: %s", chat_id, exc)
+            self._spawn(self.check_session())  # an offline Echo, or the whole session?
             return SendResult(success=False, error=str(exc))
         return SendResult(success=True, message_id=uuid.uuid4().hex)
+
+    # -- Amazon session health -------------------------------------------------------------
+
+    async def _watch_session(self) -> None:
+        await asyncio.sleep(FIRST_CHECK_AFTER_S)
+        while True:
+            await self.check_session()
+            await asyncio.sleep(self.settings.check_minutes * 60)
+
+    async def check_session(self) -> None:
+        try:
+            await asyncio.to_thread(bridge.check_session)
+        except bridge.BridgeError as exc:
+            self._session_changed(False, str(exc))
+        else:
+            self._session_changed(True)
+
+    def _session_changed(self, ok: bool, error: str = "") -> None:
+        was, self._session_ok = self._session_ok, ok
+        if ok == was or (ok and was is None):
+            return
+        if ok:
+            logger.info("Alexa: the Amazon session works again")
+            self._alert(ALERT_UP)
+        else:
+            logger.warning("Alexa: the Amazon session is not working: %s", error)
+            self._alert(ALERT_DOWN.format(error=error))
+
+    def _alert(self, text: str) -> None:
+        if not self.settings.alert_to:
+            return
+        try:
+            sent = alert_owner(self.settings.alert_to, text)
+        except Exception:  # noqa: BLE001 - an alert must never break the adapter
+            logger.exception("Alexa: alert on %s failed", self.settings.alert_to)
+            return
+        if not sent:
+            logger.warning("Alexa: could not alert on %s (home channel set? "
+                           "allow_gateway_injection on?)", self.settings.alert_to)
+
+    def _spawn(self, coro: Any) -> None:
+        task = asyncio.create_task(coro)
+        self._background.add(task)
+        task.add_done_callback(self._background.discard)
 
     # -- inbound --------------------------------------------------------------------------
 
@@ -208,7 +262,8 @@ class AlexaAdapter(BasePlatformAdapter):
         reply = await self._ask_hermes(turn, started)
         self._learn_device(turn, payload)
         if reply is None:
-            return skill.response(say("deferred"))
+            # No promise of an announcement that can't happen.
+            return skill.response(say("no_announce" if self._session_ok is False else "deferred"))
         if turn.conversation:
             return skill.response(reply, end=False, reprompt=say("more"), conversation=True)
         return skill.response(reply)
@@ -252,6 +307,4 @@ class AlexaAdapter(BasePlatformAdapter):
                 self._known_devices.discard(turn.chat_id)  # try again on the next request
                 logger.info("Alexa: could not tell which Echo %s is yet: %s", turn.chat_id, exc)
 
-        task = asyncio.create_task(learn())
-        self._background.add(task)
-        task.add_done_callback(self._background.discard)
+        self._spawn(learn())

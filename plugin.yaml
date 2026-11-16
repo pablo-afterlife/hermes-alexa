@@ -40,6 +40,14 @@ optional_env:
     description: "Echo name for cron deliver=alexa (default: your only Echo)"
     prompt: "Echo for scheduled messages"
     password: false
+  - name: ALEXA_ALERT_TO
+    description: "Platform whose home chat is told when the Amazon session stops working, e.g. telegram (needs plugins.entries.hermes-alexa.allow_gateway_injection: true)"
+    prompt: "Where to alert when the Amazon session drops"
+    password: false
+  - name: ALEXA_CHECK_MINUTES
+    description: "How often to check that the Amazon session still works (default 30; 0 turns it off)"
+    prompt: "Minutes between Amazon session checks"
+    password: false
   - name: ALEXA_REPLY_SECONDS
     description: "How long Alexa waits for Hermes before saying it will announce the answer (default 5.5)"
     prompt: "Seconds to wait for a spoken reply"
