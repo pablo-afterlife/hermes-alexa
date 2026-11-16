@@ -24,20 +24,22 @@ jobs:
           repository: NousResearch/hermes-agent
           ref: ${{ matrix.hermes }}
           path: hermes-agent
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.14"
-      - run: pip install -e ./hermes-agent "aiohttp==3.14.5" "pytest==9.1.1"
+      - uses: astral-sh/setup-uv@v6
+      - name: install Hermes from its lock file
+        working-directory: hermes-agent
+        run: |
+          uv sync --frozen --python 3.14
+          uv pip install --python .venv "aiohttp==3.14.5" "pytest==9.1.1"
       - name: tests
         working-directory: plugin
         env:
           PYTHONPATH: ${{ github.workspace }}/hermes-agent
           PYTHONUTF8: "1"
-        run: python -m pytest -q
+        run: ../hermes-agent/.venv/bin/python -m pytest -q
       - name: hermes plugins validate
         env:
           HERMES_HOME: ${{ runner.temp }}/hermes-home
-        run: hermes plugins validate plugin
+        run: hermes-agent/.venv/bin/hermes plugins validate plugin
 
   bridge:
     name: bridge (Python 3.13)
