@@ -30,6 +30,18 @@ PLATFORM_HINT = (
     "your final answer is announced on the same Echo when ready, so just give the result, "
     "briefly. Do not call alexa_speak to answer: your reply already goes to the Echo.")
 
+# What Hermes may use when a request comes by voice. Anyone near the Echo can speak (a guest,
+# the TV), so no terminal, code, files, browser, computer control or memory writes. The owner
+# can choose otherwise with ``platform_toolsets.alexa`` in config.yaml.
+VOICE_TOOLSETS = ("web", "session_search", "todo", "alexa")
+
+
+def voice_toolsets(user_config: dict | None) -> list[str] | None:
+    """The toolsets for a voice request: None when the owner set ``platform_toolsets.alexa``
+    (the gateway then uses that list), else the safe voice set."""
+    chosen = ((user_config or {}).get("platform_toolsets") or {}).get(PLATFORM)
+    return None if isinstance(chosen, list) else list(VOICE_TOOLSETS)
+
 
 def _env(name: str) -> str:
     try:
@@ -135,4 +147,4 @@ def register_platform(ctx: Any) -> None:
             cron_deliver_env_var="ALEXA_HOME_CHANNEL", standalone_sender_fn=standalone_send,
             allowed_users_env="ALEXA_ALLOWED_USERS", allow_all_env="ALEXA_ALLOW_ALL_USERS",
             max_message_length=MAX_SPEECH_CHARS, emoji="🔵", display_tier="minimal",
-            platform_hint=PLATFORM_HINT)))
+            platform_hint=PLATFORM_HINT, allow_update_command=False)))

@@ -57,6 +57,10 @@ Echo ─▶ Alexa cloud ─▶ HTTPS tunnel /alexa ─▶ adapter (127.0.0.1:879
   serial. A few seconds after the first request from an Echo, the bridge looks at Alexa's
   voice history (`sync_history_state`, latest record per device) and remembers the Echo that
   just spoke (`skill-devices.json`). With a single Echo there is nothing to look up.
+- **Voice is not a password:** anyone near the Echo can speak, and the TV can too. A voice
+  request gets only `web`, `session_search`, `todo` and the `alexa` tools: no terminal,
+  code, files, browser, computer control or memory writes, and no `/update`. The owner can
+  pick other toolsets with `platform_toolsets.alexa` in `config.yaml` (`hermes tools`).
 - **Display tier `minimal`:** no tool progress or interim messages are read out loud.
 - **Conversation mode:** "Alexa, open Hermes" keeps the session open (reprompt "anything
   else?") until the user stops; a one-shot "Alexa, ask Hermes …" ends after the answer.

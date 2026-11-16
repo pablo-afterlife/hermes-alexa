@@ -76,6 +76,25 @@ def test_registers_alexa_as_a_voice_platform(ctx):
     assert entry["allowed_users_env"] == "ALEXA_ALLOWED_USERS"
     assert entry["cron_deliver_env_var"] == "ALEXA_HOME_CHANNEL"
     assert "alexa_speak" in entry["platform_hint"]  # the agent must not answer twice
+    assert entry["allow_update_command"] is False  # no /update by voice
+
+
+DANGEROUS = {"terminal", "execute_code", "computer_use", "write_file", "patch", "read_file",
+             "browser_exec", "delegate_task", "memory", "skill_manage", "cronjob_manage",
+             "manage_connections", "process_manage"}
+
+
+def test_voice_requests_get_no_tool_that_acts_on_the_machine():
+    import toolsets
+
+    voice = alexa_platform.voice_toolsets({"platform_toolsets": {"cli": ["terminal"]}})
+    tools = {tool for name in voice for tool in toolsets.resolve_toolset(name)}
+    assert tools and not tools & DANGEROUS
+
+
+def test_the_owner_can_choose_the_alexa_toolsets():
+    chosen = {"platform_toolsets": {"alexa": ["web", "terminal"]}}
+    assert alexa_platform.voice_toolsets(chosen) is None  # the gateway uses the owner's list
 
 
 def test_platform_is_off_until_a_skill_id_is_set(monkeypatch):

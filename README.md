@@ -44,6 +44,9 @@ HTTPS tunnel to your machine. Phase 3 turns this into one command; today:
 
 Only requests signed by Amazon for your skill id get in (see
 [architecture](docs/architecture.md#inbound-from-alexa-ask-hermes-to-a-spoken-answer)).
+Voice is not a password, so by voice Hermes only searches the web, looks up past
+conversations and uses the Alexa tools: no terminal, code or files unless you choose so in
+`platform_toolsets.alexa`.
 
 ## Install
 
