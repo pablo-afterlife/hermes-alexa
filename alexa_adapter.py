@@ -30,7 +30,7 @@ from gateway.platforms.event import MessageEvent, MessageType
 
 from . import alexa_bridge as bridge
 from . import alexa_skill as skill
-from .alexa_platform import PLATFORM, Settings
+from .alexa_platform import PLATFORM, Settings, voice_toolsets
 from .alexa_verify import AlexaRequestVerifier, RequestRejected
 
 logger = logging.getLogger(__name__)
@@ -129,6 +129,16 @@ class AlexaAdapter(BasePlatformAdapter):
 
     async def get_chat_info(self, chat_id: str) -> dict[str, Any]:
         return {"name": "Echo", "type": "dm"}
+
+    def toolsets_for_source(self, source: Any) -> list[str] | None:
+        """Voice is not a password: unless the owner chose the Alexa toolsets, a request from
+        the Echo gets only the safe voice set (``VOICE_TOOLSETS``)."""
+        try:
+            from hermes_cli.config import load_config_readonly
+            user_config = load_config_readonly()
+        except Exception:  # noqa: BLE001 - can't read the config: stay with the safe set
+            user_config = None
+        return voice_toolsets(user_config)
 
     # -- outbound -------------------------------------------------------------------------
 

@@ -43,7 +43,9 @@ túnel HTTPS até a sua máquina. A Fase 3 transforma isso num comando só; por 
    com `hermes pairing approve alexa <código>` (ou use `ALEXA_ALLOWED_USERS`).
 
 Só entram pedidos assinados pela Amazon para o id da sua skill (ver a
-[arquitetura](docs/architecture.md)).
+[arquitetura](docs/architecture.md)). Voz não é senha: pela voz o Hermes só busca na web,
+consulta conversas anteriores e usa as ferramentas da Alexa. Terminal, código e arquivos só
+se você escolher em `platform_toolsets.alexa`.
 
 ## Instalação
 

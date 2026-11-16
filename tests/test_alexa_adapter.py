@@ -219,6 +219,24 @@ def test_compressed_bodies_are_refused(announced):
     assert status == 400 and hermes.events == []
 
 
+@pytest.mark.parametrize("config, expected", [
+    ({}, list(alexa_adapter.voice_toolsets(None))),
+    ({"platform_toolsets": {"alexa": ["web", "terminal"]}}, None),
+    (RuntimeError("config unreadable"), list(alexa_adapter.voice_toolsets(None))),
+])
+def test_voice_requests_use_the_safe_toolsets_unless_the_owner_chose(monkeypatch, config,
+                                                                     expected):
+    import hermes_cli.config
+
+    def load():
+        if isinstance(config, Exception):
+            raise config
+        return config
+
+    monkeypatch.setattr(hermes_cli.config, "load_config_readonly", load)
+    assert make_adapter().toolsets_for_source(None) == expected
+
+
 def test_the_echo_is_not_told_every_time_the_gateway_restarts():
     adapter = make_adapter()
     assert adapter.config.gateway_restart_notification is False
